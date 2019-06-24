@@ -4,8 +4,8 @@ import math
 from typing import List
 
 
-MAX_LENGTH = 10
 EPSILON = 0.0000000000000000000000000000000001
+
 
 def fuzzyLog(x: float) -> float:
     return max(0, min(1, x))
@@ -17,6 +17,7 @@ def relative_diff(coord_list, operand, first):
         return fuzzyLog((operand - mini) / (maxi - mini + EPSILON))
     else:
         return fuzzyLog((maxi - operand) / (maxi - mini + EPSILON))
+
 
 
 class Pose:
