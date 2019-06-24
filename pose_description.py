@@ -5,6 +5,18 @@ from typing import List
 
 
 MAX_LENGTH = 10
+EPSILON = 0.0000000000000000000000000000000001
+
+def fuzzyLog(x: float) -> float:
+    return max(0, min(1, x))
+
+def relative_diff(coord_list, operand, first):
+    maxi = max(coord_list)
+    mini = min(coord_list)
+    if first:
+        return fuzzyLog((operand - mini) / (maxi - mini + EPSILON))
+    else:
+        return fuzzyLog((maxi - operand) / (maxi - mini + EPSILON))
 
 
 class Pose:
@@ -185,6 +197,7 @@ class Joint:
     def __repr__(self):
         return f'Joint({self.id.__repr__()}, {self.x.__repr__()}, {self.y.__repr__()})'
 
+
     def above(self, other):
         #TODO: Simple implementation for the moment, see results in practice
         if type(other) == Joint:
@@ -193,13 +206,10 @@ class Joint:
             return self.above_all(other.to_joint_list())
         
     def above_all(self, others):
-        top = min(joint.y for joint in others)
-        bottom = max(joint.y for joint in others)
-        try:
-            return max(0, min(1, (bottom - self.y) / (bottom - top)))
-        except ZeroDivisionError:
-            return 1 if top > self.y else 0
-    
+        gen = [joint.y for joint in others]
+        return relative_diff(gen, self.y, False)
+            
+           
     def below(self, other):
         if type(other) == Joint:
             return 1 if self.y > other.y else 0
@@ -207,12 +217,8 @@ class Joint:
             return self.below_all(other.to_joint_list())
 
     def below_all(self, others):
-        top = min(joint.y for joint in others)
-        bottom = max(joint.y for joint in others)
-        try:
-            return max(0, min(1, (self.y - top) / (bottom - top)))
-        except ZeroDivisionError:
-            return 1 if self.y > bottom else 0
+        gen = [joint.y for joint in others]
+        return relative_diff(gen, self.y, True)
 
     def to_the_right(self, other):
         if type(other) == Joint:
@@ -221,13 +227,9 @@ class Joint:
             return self.to_the_right_all(other.to_joint_list())
 
     def to_the_right_all(self, others):
-        right = max(joint.x for joint in others)
-        left = min(joint.x for joint in others)
-        try:
-            return max(0, min(1, (self.x - left) / (right - left)))
-        except ZeroDivisionError:
-            return 1 if self.x > right else 0
-
+        gen = [joint.x for joint in others]
+        return relative_diff(gen, self.x, True)
+        
     def to_the_left(self, other):
         if type(other) == Joint:
             return 1 if self.x < other.x else 0
@@ -235,13 +237,11 @@ class Joint:
             return self.to_the_left_all(other.to_joint_list())
 
     def to_the_left_all(self, others):
-        right = max(joint.x for joint in others)
-        left = min(joint.x for joint in others)
-        try:
-            return max(0, min(1, (right - self.x) / (right - left)))
-        except ZeroDivisionError:
-            return 1 if self.x < left else 0
+        gen = [joint.x for joint in others]
+        return relative_diff(gen, self.x, False)
 
+    #TODO: add more methods for pose description
+       
     def is_near(self, other):
         pass
 
@@ -332,6 +332,12 @@ class Segment:
     def to_joint_list(self):
         return [self.firstJoint, self.secondJoint]
 
+    def top_bottom(self):
+        return (self.firstJoint.y, self.secondJoint.y)
+
+    def right_left(self):
+        return (self.firstJoint.x, self.secondJoint.x)
+
     def above(self, other):
         if type(other) == Joint:
             return other.below_all(self.to_joint_list())
@@ -339,13 +345,8 @@ class Segment:
             return self.above_all(other.to_joint_list())
 
     def above_all(self, others):
-        top1 = min(self.firstJoint.y, self.secondJoint.y)
-        bottom1 = max(self.firstJoint.y, self.secondJoint.y)
         top2 = min(joint.y for joint in others)
-        try:
-            return max(0, min(1, (top2 - top1) / (bottom1 - top1)))
-        except ZeroDivisionError:
-            return 1 if top2 > top1 else 0
+        return relative_diff(self.top_bottom(), top2, True)
         
     def below(self, other):
         if type(other) == Joint:
@@ -354,13 +355,8 @@ class Segment:
             return self.below_all(other.to_joint_list())
 
     def below_all(self, others):
-        top1 = min(self.firstJoint.y, self.secondJoint.y)
-        bottom1 = max(self.firstJoint.y, self.secondJoint.y)
         bottom2 = max(joint.y for joint in others)
-        try:
-            return max(0, min(1, (bottom1 - bottom2) / (bottom1 - top1)))
-        except ZeroDivisionError:
-            return 1 if bottom1 > bottom2 else 0
+        return relative_diff(self.top_bottom(), bottom2, False)
        
     def to_the_right(self, other):
         if type(other) == Joint:
@@ -369,13 +365,8 @@ class Segment:
             return self.to_the_right_all(other.to_joint_list())
 
     def to_the_right_all(self, others):
-        right1 = max(self.firstJoint.x, self.secondJoint.x)
-        left1 = min(self.firstJoint.x, self.secondJoint.x)
         right2 = max(joint.x for joint in others)
-        try:
-            return max(0, min(1, (right1 - right2) / (right1 - left1)))
-        except ZeroDivisionError:
-            return 1 if left1 > right2 else 0
+        return relative_diff(self.right_left(), right2, False)
    
     def to_the_left(self, other):
         if type(other) == Joint:
@@ -384,13 +375,10 @@ class Segment:
             return self.to_the_left_all(other.to_joint_list())
 
     def to_the_left_all(self, others):
-        right1 = max(self.firstJoint.x, self.seondJoint.x)
-        left1 = min(self.firstJoint.x, self.secondJoint.x)
         left2 = min(joint.x for joint in others)
-        try:
-            return max(0, min(1, (left2 - left1) / (right1 - left1)))
-        except ZeroDivisionError:
-            return 1 if right2 < left2 else 0
+        return relative_diff(self.right_left(), left2, True)
+
+    #TODO: add more methods for pose description
 
     def is_near(self, other):
         pass
@@ -407,13 +395,13 @@ class Segment:
     def points_to(self, other):
         pass
 
-    def crosses(first, second, skeleton):
+    def crosses(self, other):
         pass
 
-    def parallel(first, second, skeleton):
+    def parallel(self, other):
         pass
 
-    def aligned_with(first, second, skeleton):
+    def aligned_with(self, other):
         pass
 
 class LimbSelector:
@@ -494,6 +482,12 @@ class Limb:
     def to_joint_list(self):
         return self.joints
 
+    def top_bottom(self):
+        return (min(joint.y for joint in self.joints), max(joint.y for joint in self.joints))
+
+    def right_left(self):
+        return (max(joint.x for joint in self.joints), min(joint.x for joint in self.joints))
+
     def above(self, other):
         if type(other) == Joint:
            return other.below_all(self.to_joint_list())
@@ -501,13 +495,9 @@ class Limb:
             return self.above_all(other.to_joint_list())
 
     def above_all(self, others):
-        top1 = min(joint.y for joint in self.joints)
-        bottom1 = max(joint.y for joint in self.joints)
+        gen = [joint.y for joint in self.joints]
         top2 = min(joint.y for joint in others)
-        try:
-            return max(0, min(1, (top2 - top1) / (bottom1 - top1)))
-        except ZeroDivisionError:
-            return 1 if top2 > top1 else 0
+        return relative_diff(gen, top2, True)
 
     def below(self, other):
         if type(other) == Joint:
@@ -516,13 +506,9 @@ class Limb:
             return self.below_all(other.to_joint_list())
 
     def below_all(self, others):
-        top1 = min(joint.y for joint in self.joints)
-        bottom1 = max(joint.y for joint in self.joints)
+        gen = [joint.y for joint in self.joints]
         bottom2 = max(joint.y for joint in others)
-        try:
-            return max(0, min(1, (bottom1 - bottom2) / (bottom1 - top1)))
-        except ZeroDivisionError:
-            return 1 if bottom1 > bottom2 else 0
+        return relative_diff(gen, bottom2, False)
 
     def to_the_right(self, other):
         if type(other) == Joint:
@@ -531,13 +517,9 @@ class Limb:
             return self.to_the_right_all(other.to_joint_list())
 
     def to_the_right_all(self, others):
-        right1 = max(joint.x for joint in self.joints)
-        left1 = min(joint.x for joint in self.joints)
+        gen = [joint.x for joint in self.joints]
         right2 = max(joint.x for joint in others)
-        try:
-            return max(0, min(1, (right1 - right2) / (right1 - left1)))
-        except ZeroDivisionError:
-            return 1 if left1 > right2 else 0
+        return relative_diff(gen, right2, False)
 
     def to_the_left(self, other):
         if type(other) == Joint:
@@ -546,13 +528,9 @@ class Limb:
             return self.to_the_left_all(other.to_joint_list())
 
     def to_the_left_all(self, others):
-        right1 = max(joint.x for joint in self.joints)
-        left1 = min(joint.x for joint in self.joints)
+        gen = [joint.x for joint in self.joints]
         left2 = min(joint.x for joint in others)
-        try:
-            return max(0, min(1, (left2 - left1) / (right1 - left1)))
-        except ZeroDivisionError:
-            return 1 if right1 < left2 else 0
+        return relative_diff(gen, left2, True)
 
 class Body:
 
