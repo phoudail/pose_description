@@ -207,8 +207,8 @@ class Joint:
             return self.above_all(other.to_joint_list())
         
     def above_all(self, others):
-        gen = [joint.y for joint in others]
-        return relative_diff(gen, self.y, False)
+        coord = [joint.y for joint in others]
+        return relative_diff(coord, self.y, False)
             
            
     def below(self, other):
@@ -218,8 +218,8 @@ class Joint:
             return self.below_all(other.to_joint_list())
 
     def below_all(self, others):
-        gen = [joint.y for joint in others]
-        return relative_diff(gen, self.y, True)
+        coord = [joint.y for joint in others]
+        return relative_diff(coord, self.y, True)
 
     def to_the_right(self, other):
         if type(other) == Joint:
@@ -228,8 +228,8 @@ class Joint:
             return self.to_the_right_all(other.to_joint_list())
 
     def to_the_right_all(self, others):
-        gen = [joint.x for joint in others]
-        return relative_diff(gen, self.x, True)
+        coord = [joint.x for joint in others]
+        return relative_diff(coord, self.x, True)
         
     def to_the_left(self, other):
         if type(other) == Joint:
@@ -238,8 +238,8 @@ class Joint:
             return self.to_the_left_all(other.to_joint_list())
 
     def to_the_left_all(self, others):
-        gen = [joint.x for joint in others]
-        return relative_diff(gen, self.x, False)
+        coord = [joint.x for joint in others]
+        return relative_diff(coord, self.x, False)
 
     #TODO: add more methods for pose description
        
@@ -496,9 +496,9 @@ class Limb:
             return self.above_all(other.to_joint_list())
 
     def above_all(self, others):
-        gen = [joint.y for joint in self.joints]
+        coord = [joint.y for joint in self.joints]
         top2 = min(joint.y for joint in others)
-        return relative_diff(gen, top2, True)
+        return relative_diff(coord, top2, True)
 
     def below(self, other):
         if type(other) == Joint:
@@ -507,9 +507,9 @@ class Limb:
             return self.below_all(other.to_joint_list())
 
     def below_all(self, others):
-        gen = [joint.y for joint in self.joints]
+        coord = [joint.y for joint in self.joints]
         bottom2 = max(joint.y for joint in others)
-        return relative_diff(gen, bottom2, False)
+        return relative_diff(coord, bottom2, False)
 
     def to_the_right(self, other):
         if type(other) == Joint:
@@ -518,9 +518,9 @@ class Limb:
             return self.to_the_right_all(other.to_joint_list())
 
     def to_the_right_all(self, others):
-        gen = [joint.x for joint in self.joints]
+        coord = [joint.x for joint in self.joints]
         right2 = max(joint.x for joint in others)
-        return relative_diff(gen, right2, False)
+        return relative_diff(coord, right2, False)
 
     def to_the_left(self, other):
         if type(other) == Joint:
@@ -529,9 +529,9 @@ class Limb:
             return self.to_the_left_all(other.to_joint_list())
 
     def to_the_left_all(self, others):
-        gen = [joint.x for joint in self.joints]
+        coord = [joint.x for joint in self.joints]
         left2 = min(joint.x for joint in others)
-        return relative_diff(gen, left2, True)
+        return relative_diff(coord, left2, True)
 
 class Body:
 
