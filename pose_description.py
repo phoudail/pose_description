@@ -4,7 +4,7 @@ import math
 from typing import List
 
 
-EPSILON = 0.0000000000000000000000000000000001
+EPSILON = 0.0001
 
 
 def fuzzyLog(x: float) -> float:
